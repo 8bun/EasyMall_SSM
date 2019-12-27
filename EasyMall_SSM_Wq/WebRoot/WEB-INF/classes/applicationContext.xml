@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <!-- 开启注解扫描，管理service和dao -->
+    <context:component-scan base-package="com.wq.service"/>
+    <context:component-scan base-package="com.wq.dao"/>
+    <!--配置配置文件的位置-->
+    <context:property-placeholder location="classpath:db.properties"/>
+    <!-- 配置连接池 -->
+    <!-- 配置数据源 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/easymall?characterEncoding=utf8" />
+		<property name="username" value="root" />
+		<property name="password" value="13202441556" />
+		<!-- 最大连接数 -->
+		<property name="maxTotal" value="30"/>
+		<!-- 最大空闲连接数 -->
+		<property name="maxIdle" value="10"/>
+		<!-- 初始化连接数 -->
+		<property name="initialSize" value="5"/>
+	</bean>
+    <!-- 把交给IOC管理 SqlSessionFactory -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />   
+        <!-- 传入PageHelper的插件，用于分页查询订单使用 -->
+        <property name="plugins">
+            <array>
+                <!-- 传入插件的对象 -->
+                <bean class="com.github.pagehelper.PageInterceptor">
+                    <property name="properties">
+                        <props>
+                            <!--分页插件会自动检测当前的数据库链接，自动选择合适的分页方式。-->
+                            <prop key="helperDialect">mysql</prop>
+                            <!--分页合理化参数，默认值为 false 。当该参数设置为 true 时， pageNum<=0 时会查询第一-->
+                            <!--页， pageNum>pages （超过总数时），会查询最后一页。默认 false 时，直接根据参数进行查询。-->
+                            <prop key="reasonable">true</prop>
+                        </props>
+                    </property>
+                </bean>
+            </array>
+        </property>
+    </bean>
+    <!-- 实例化购物车Map -->
+    <bean id="cartmap" class="java.util.HashMap" name="cartmap"></bean>
+    
+    <!-- 扫描dao接口，MapperScannerConfigurer自动装配SqlSessionFactory或SqlSessionTemplate
+    ，生成dao的代理对象-->
+    <bean id="mapperScanner" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.wq.dao"/>
+    </bean>
+
+    <!-- 配置Spring的声明式事务管理 -->
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+</beans>
